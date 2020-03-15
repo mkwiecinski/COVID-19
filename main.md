@@ -1,29 +1,20 @@
----
-title: "COVID-19"
-author: "MK"
-date: "16 03 2020"
-output: rmarkdown::github_document
----
-
-```{r setup, include=FALSE}
-library(data.table)
-library(tidyverse)
-```
-
+COVID-19
+================
+MK
+16 03 2020
 
 ## Params
 
-```{r}
+``` r
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv"
 START_CASES_NO <- 1
 MIN_CASES      <- 1000
 MAX_CASES      <- Inf
 ```
 
-
 ## Calc
 
-```{r}
+``` r
 data_conf <- 
   fread(url_conf) %>% 
   melt(., id.vars = c(1,2,3,4)) %>% 
@@ -48,22 +39,17 @@ conf <-
   mutate(days = date-date_first) %>% 
   filter(days >=0) %>% 
   select(-date, -date_first)
+```
 
+    ## Joining, by = "country"
+
+``` r
 conf_filtered <- 
   conf %>% 
   filter((maxv > MIN_CASES & maxv < MAX_CASES & country != "China") | country == "Poland") %>% 
   mutate(maxv = ifelse(value == maxv, 1, 0))
-
 ```
-
 
 ### Plots
 
-```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-ggplot(conf_filtered, aes(days, log(value), colour = country)) + 
-  geom_point() + 
-  geom_line() +
-  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = log(value)), hjust = -.1) +
-  theme(legend.position="none")
-```
-
+![](main_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
