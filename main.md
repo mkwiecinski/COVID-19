@@ -57,6 +57,4 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
 
 ![](main_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-#### 2.2. Day 0 = 30 cases, countries \> 1000 + Poland, crop at 10000
-
 ![](main_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
