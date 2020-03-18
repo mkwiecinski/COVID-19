@@ -135,21 +135,21 @@ ggplot(conf_filtered, aes(days, value, colour = country)) +
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = 10000, countries_include)
+conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = Inf, countries_include)
 
 ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
   geom_point() + 
   geom_line() +
   geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1) +
   labs(y="Number of cases per 1M inhabitants", x = "Days from patient 0") +
-  labs(title = "3.1 Number of cases per 1M inhabitans, Day 0 = 1 case", subtitle = "countries > 1000 nominal cases + Poland, crop at 10000 nominal cases") +
+  labs(title = "3.1 Number of cases per 1M inhabitans, Day 0 = 1 case", subtitle = "countries > 1000 nominal cases + Poland") +
   labs(caption = "data source: github.com/CSSEGISandData/COVID-19")
 ```
 
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = 10000, countries_include)
+conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = Inf, countries_include)
 
 
 ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
@@ -157,7 +157,7 @@ ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) +
   geom_line() +
   geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1) +
   labs(y="Number of cases per 1M inhabitants", x = "Days from patient 0") +
-  labs(title = "3.2 Number of cases per 1M inhabitans, Day 0 = 30 cases", subtitle = "countries > 1000 nominal cases + Poland, crop at 10000 nominal cases") +
+  labs(title = "3.2 Number of cases per 1M inhabitans, Day 0 = 30 cases", subtitle = "countries > 1000 nominal cases + Poland") +
   labs(caption = "data source: github.com/CSSEGISandData/COVID-19")
 ```
 
