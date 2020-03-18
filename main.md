@@ -14,6 +14,11 @@ url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/cs
 ``` r
 build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = 10000, countries_include = c("Poland")){
 
+  population <- fread("API_SP.POP.TOTL_DS2_en_csv_v2_866861.csv", header = TRUE) %>% 
+    select(`Country Name`, `2018`) %>% 
+    rename(country = `Country Name`, pop = `2018`) %>%
+    mutate(pop = pop/1000000)
+  
   data_conf <- 
     fread(url_conf) %>% 
     melt(., id.vars = c(1,2,3,4)) %>% 
@@ -37,8 +42,10 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     left_join(., conf_first) %>% 
     mutate(days = date-date_first) %>% 
     filter(days >=0) %>% 
-    select(-date, -date_first)
-  
+    left_join(., population) %>% 
+    mutate(value_per_1M = value/pop) %>%
+    select(-date, -date_first, -pop)
+
   conf_filtered <- 
     conf %>% 
     filter((maxv > MIN_CASES & maxv < MAX_CASES & country != "China") | country %in% countries_include) %>%
@@ -58,3 +65,7 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
 ![](main_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ![](main_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+![](main_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+![](main_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
