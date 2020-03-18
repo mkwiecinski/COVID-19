@@ -27,6 +27,11 @@ url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/cs
 ```{r}
 build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = 10000, countries_include = c("Poland")){
 
+  population <- fread("API_SP.POP.TOTL_DS2_en_csv_v2_866861.csv", header = TRUE) %>% 
+    select(`Country Name`, `2018`) %>% 
+    rename(country = `Country Name`, pop = `2018`) %>%
+    mutate(pop = pop/1000000)
+  
   data_conf <- 
     fread(url_conf) %>% 
     melt(., id.vars = c(1,2,3,4)) %>% 
@@ -50,8 +55,10 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     left_join(., conf_first) %>% 
     mutate(days = date-date_first) %>% 
     filter(days >=0) %>% 
-    select(-date, -date_first)
-  
+    left_join(., population) %>% 
+    mutate(value_per_1M = value/pop) %>%
+    select(-date, -date_first, -pop)
+
   conf_filtered <- 
     conf %>% 
     filter((maxv > MIN_CASES & maxv < MAX_CASES & country != "China") | country %in% countries_include) %>%
@@ -124,6 +131,35 @@ ggplot(conf_filtered, aes(days, value, colour = country)) +
   labs(caption = "data source: github.com/CSSEGISandData/COVID-19")
 ```
 
+
+
+```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
+countries_include <- c("Poland")
+conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = 10000, countries_include)
+
+ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
+  geom_point() + 
+  geom_line() +
+  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1) +
+  labs(y="Number of cases per 1M inhabitants", x = "Days from patient 0") +
+  labs(title = "3.1 Number of cases per 1M inhabitans, Day 0 = 1 case", subtitle = "countries > 1000 nominal cases + Poland, crop at 10000 nominal cases") +
+  labs(caption = "data source: github.com/CSSEGISandData/COVID-19")
+```
+
+
+```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
+countries_include <- c("Poland")
+conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = 10000, countries_include)
+
+
+ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
+  geom_point() + 
+  geom_line() +
+  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1) +
+  labs(y="Number of cases per 1M inhabitants", x = "Days from patient 0") +
+  labs(title = "3.2 Number of cases per 1M inhabitans, Day 0 = 30 cases", subtitle = "countries > 1000 nominal cases + Poland, crop at 10000 nominal cases") +
+  labs(caption = "data source: github.com/CSSEGISandData/COVID-19")
+```
 
 
 
