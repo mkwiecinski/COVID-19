@@ -37,6 +37,9 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     select(-value) %>% 
     rename(date_first = date)
   
+  tests <- fread("tests.csv", header = TRUE) %>%
+    mutate(date = as.Date(date, format = "%d.%m.%y"))
+  
   conf <- 
     data_conf %>% 
     left_join(., conf_first) %>% 
@@ -44,6 +47,9 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     filter(days >=0) %>% 
     left_join(., population) %>% 
     mutate(value_per_1M = value/pop) %>%
+    left_join(., tests) %>%
+    mutate(tests_per_1M = tests/pop) %>%
+    mutate(cases_per_test = value/tests) %>%
     select(-date, -date_first, -pop)
 
   conf_filtered <- 
@@ -69,3 +75,10 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
 ![](main_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ![](main_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+### Rates:
+
+Idea:
+<https://ourworldindata.org/grapher/tests-vs-confirmed-cases-covid-19-per-million>
+
+![](main_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->

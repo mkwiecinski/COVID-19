@@ -50,6 +50,9 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     select(-value) %>% 
     rename(date_first = date)
   
+  tests <- fread("tests.csv", header = TRUE) %>%
+    mutate(date = as.Date(date, format = "%d.%m.%y"))
+  
   conf <- 
     data_conf %>% 
     left_join(., conf_first) %>% 
@@ -57,6 +60,9 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     filter(days >=0) %>% 
     left_join(., population) %>% 
     mutate(value_per_1M = value/pop) %>%
+    left_join(., tests) %>%
+    mutate(tests_per_1M = tests/pop) %>%
+    mutate(cases_per_test = value/tests) %>%
     select(-date, -date_first, -pop)
 
   conf_filtered <- 
@@ -161,5 +167,22 @@ ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) +
   labs(caption = "data source: github.com/CSSEGISandData/COVID-19")
 ```
 
+### Rates:
 
+Idea: https://ourworldindata.org/grapher/tests-vs-confirmed-cases-covid-19-per-million
+
+```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
+countries_include <- c("Poland")
+conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = Inf, countries_include) %>%
+  filter(cases_per_test > 0 & cases_per_test < 250)
+
+
+ggplot(conf_filtered, aes(tests_per_1M, cases_per_test, colour = country)) + 
+  geom_point() + 
+  geom_line() +
+  geom_text(data = conf_filtered, aes(label = country, colour = country, x = tests_per_1M, y = cases_per_test), vjust = 0, nudge_y = -0.01, size = 3) +
+  labs(y="Number of cases per 1 test", x = "Number of tests per 1M inhabitants") +
+  labs(title = "4.1 Number of tests per 1M inhabitants vs cases per test", subtitle = "countries > 1000 nominal cases + Poland") +
+  labs(caption = "source: github.com/CSSEGISandData/COVID-19, ourworldindata.org/coronavirus-testing-source-data")
+```
 
