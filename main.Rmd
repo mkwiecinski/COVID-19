@@ -56,7 +56,10 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     rename(date_first = date)
   
   tests <- fread("tests.csv", header = TRUE) %>%
-    mutate(date = as.Date(date, format = "%d.%m.%y"))
+    mutate(date = as.Date(date, format = "%d.%m.%y")) %>%
+    group_by(country) %>%
+    mutate(test_latest = ifelse(date == max(date), 1, 0)) %>%
+    ungroup(.)
   
   conf <- 
     data_conf %>% 
@@ -68,7 +71,7 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     left_join(., tests) %>%
     mutate(tests_per_1M = tests/pop) %>%
     mutate(cases_per_test = value/tests) %>%
-    select(-date, -date_first, -pop)
+    select(-date_first, -pop)
 
   conf_filtered <- 
     conf %>% 
@@ -179,16 +182,19 @@ Idea: https://ourworldindata.org/grapher/tests-vs-confirmed-cases-covid-19-per-m
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 countries_include <- c("Poland")
 conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = Inf, countries_include) %>%
-  filter(cases_per_test > 0 & cases_per_test < 250)
+  filter(cases_per_test > 0 & cases_per_test < 250) #%>%
+  #mutate(tests_per_1M = log(tests_per_1M))
 
 
 ggplot(conf_filtered, aes(tests_per_1M, cases_per_test, colour = country)) + 
-  geom_point() + 
-  geom_line() +
-  geom_text(data = conf_filtered, aes(label = country, colour = country, x = tests_per_1M, y = cases_per_test), vjust = 0, nudge_y = -0.005, size = 3) +
+  geom_text(data = conf_filtered %>% filter(test_latest == 0), aes(label = day(date), colour = country, x = tests_per_1M, y = cases_per_test), size = 2, alpha = 0.5) +
+  geom_line(alpha = 0.3) +
+  geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = country, colour = country, x = tests_per_1M, y = cases_per_test), nudge_y = 0.02, size = 3) +
+  geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = day(date), colour = country, x = tests_per_1M, y = cases_per_test), size = 3) +
   labs(y="Number of cases per 1 test", x = "Number of tests per 1M inhabitants") +
-  labs(title = "4.1 Number of tests per 1M inhabitants vs cases per test", subtitle = "countries > 1000 nominal cases + Poland") +
-  labs(caption = "source: github.com/CSSEGISandData/COVID-19, ourworldindata.org/coronavirus-testing-source-data")
+  labs(title = "4.1 Number of tests per 1M inhabitants vs cases per test", subtitle = "countries > 1000 nominal cases + Poland. Point label = date") +
+  labs(caption = "source: github.com/CSSEGISandData/COVID-19, ourworldindata.org/coronavirus-testing-source-data") +
+  theme(legend.position = "none")
 ```
 
 ### Forecast

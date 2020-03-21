@@ -41,7 +41,10 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     rename(date_first = date)
   
   tests <- fread("tests.csv", header = TRUE) %>%
-    mutate(date = as.Date(date, format = "%d.%m.%y"))
+    mutate(date = as.Date(date, format = "%d.%m.%y")) %>%
+    group_by(country) %>%
+    mutate(test_latest = ifelse(date == max(date), 1, 0)) %>%
+    ungroup(.)
   
   conf <- 
     data_conf %>% 
@@ -53,7 +56,7 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     left_join(., tests) %>%
     mutate(tests_per_1M = tests/pop) %>%
     mutate(cases_per_test = value/tests) %>%
-    select(-date, -date_first, -pop)
+    select(-date_first, -pop)
 
   conf_filtered <- 
     conf %>% 
