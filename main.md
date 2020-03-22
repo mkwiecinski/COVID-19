@@ -1,4 +1,4 @@
-COVID-19
+SARS-nCOV-19
 ================
 MK
 16 03 2020
@@ -8,7 +8,7 @@ MK
 ``` r
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv"
 MIN_DATE <- "2020-03-10"
-TODAY    <- "2020-03-20"
+TODAY    <- "2020-03-21"
 TAKE_LOG <- TRUE
 ```
 
