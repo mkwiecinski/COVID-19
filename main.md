@@ -7,8 +7,8 @@ MK
 
 ``` r
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv"
-MIN_DATE <- "2020-03-10"
-TODAY    <- "2020-03-21"
+MIN_DATE <- "2020-03-13"
+TODAY    <- "2020-03-22"
 TAKE_LOG <- TRUE
 ```
 

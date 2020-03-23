@@ -21,8 +21,8 @@ library(lubridate)
 
 ```{r}
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv"
-MIN_DATE <- "2020-03-10"
-TODAY    <- "2020-03-21"
+MIN_DATE <- "2020-03-13"
+TODAY    <- "2020-03-22"
 TAKE_LOG <- TRUE
 ```
 
@@ -88,14 +88,14 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = Inf, countries_include)
+conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 2000, MAX_CASES = Inf, CHART_MAX = Inf, countries_include)
 
 ggplot(conf_filtered, aes(days, log(value), colour = country)) + 
   geom_point() + 
   geom_line() +
   geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = log(value)), hjust = -.1) +
   labs(y="Log(Number of cases)", x = "Days from patient 0") +
-  labs(title = "1.1 Log(Number of cases), Day 0 = 1 case", subtitle = "countries > 1000 + Poland") +
+  labs(title = "1.1 Log(Number of cases), Day 0 = 1 case", subtitle = "countries > 2000 + Poland") +
   labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
   theme(legend.position="none")
 ```
@@ -103,7 +103,7 @@ ggplot(conf_filtered, aes(days, log(value), colour = country)) +
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = Inf, countries_include)
+conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = 2000, MAX_CASES = Inf, CHART_MAX = Inf, countries_include)
 
 
 ggplot(conf_filtered, aes(days, log(value), colour = country)) + 
@@ -111,7 +111,7 @@ ggplot(conf_filtered, aes(days, log(value), colour = country)) +
   geom_line() +
   geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = log(value)), hjust = -.1) +
   labs(y="Log(Number of cases)", x = "Days from patient 0") +
-  labs(title = "1.2 Log(Number of cases), Day 0 = 30 cases", subtitle = "countries > 1000 + Poland") +
+  labs(title = "1.2 Log(Number of cases), Day 0 = 30 cases", subtitle = "countries > 2000 + Poland") +
   labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
   theme(legend.position="none")
 ```
@@ -119,21 +119,21 @@ ggplot(conf_filtered, aes(days, log(value), colour = country)) +
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 2000, MAX_CASES = Inf, CHART_MAX = 20000, countries_include)
+conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 2000, MAX_CASES = Inf, CHART_MAX = 30000, countries_include)
 
 ggplot(conf_filtered, aes(days, value, colour = country)) + 
   geom_point() + 
   geom_line() +
   geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value), hjust = -.1) +
   labs(y="Number of cases", x = "Days from patient 0") +
-  labs(title = "2.1 Number of cases, Day 0 = 1 case", subtitle = "countries > 2000 + Poland, crop at 20000") +
+  labs(title = "2.1 Number of cases, Day 0 = 1 case", subtitle = "countries > 2000 + Poland, crop at 30000") +
   labs(caption = "data source: github.com/CSSEGISandData/COVID-19")
 ```
 
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = 2000, MAX_CASES = Inf, CHART_MAX = 20000, countries_include)
+conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = 2000, MAX_CASES = Inf, CHART_MAX = 30000, countries_include)
 
 
 ggplot(conf_filtered, aes(days, value, colour = country)) + 
@@ -141,7 +141,7 @@ ggplot(conf_filtered, aes(days, value, colour = country)) +
   geom_line() +
   geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value), hjust = -.1) +
   labs(y="Number of cases", x = "Days from patient 0") +
-  labs(title = "2.2 Number of cases, Day 0 = 30 cases", subtitle = "countries > 2000 + Poland, crop at 20000") +
+  labs(title = "2.2 Number of cases, Day 0 = 30 cases", subtitle = "countries > 2000 + Poland, crop at 30000") +
   labs(caption = "data source: github.com/CSSEGISandData/COVID-19")
 ```
 
@@ -183,7 +183,7 @@ Idea: https://ourworldindata.org/grapher/tests-vs-confirmed-cases-covid-19-per-m
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = Inf, countries_include) %>%
+conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 2000, MAX_CASES = Inf, CHART_MAX = Inf, countries_include) %>%
   filter(cases_per_test > 0 & cases_per_test < 250) #%>%
   #mutate(tests_per_1M = log(tests_per_1M))
 
@@ -194,7 +194,7 @@ ggplot(conf_filtered, aes(tests_per_1M, cases_per_test, colour = country)) +
   geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = country, colour = country, x = tests_per_1M, y = cases_per_test), nudge_y = 0.02, size = 3) +
   geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = day(date), colour = country, x = tests_per_1M, y = cases_per_test), size = 3) +
   labs(y="Number of cases per 1 test", x = "Number of tests per 1M inhabitants") +
-  labs(title = "4.1 Number of tests per 1M inhabitants vs cases per test", subtitle = "countries > 1000 nominal cases + Poland. Point label = date") +
+  labs(title = "4.1 Number of tests per 1M inhabitants vs cases per test", subtitle = "countries > 2000 nominal cases + Poland. Point label = date") +
   labs(caption = "source: github.com/CSSEGISandData/COVID-19, ourworldindata.org/coronavirus-testing-source-data") +
   theme(legend.position = "none")
 ```
