@@ -8,8 +8,9 @@ MK
 ``` r
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv"
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
-MIN_DATE <- "2020-03-13"
-TODAY    <- "2020-03-23"
+MIN_DATE_TESTS <- "2020-03-10"
+MIN_DATE <- "2020-03-16"
+TODAY    <- "2020-03-24"
 TAKE_LOG <- TRUE
 ```
 
@@ -34,7 +35,8 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     select(-variable) %>% 
     rename(country = `Country/Region`, province = `Province/State`) %>% 
     group_by(country, date) %>% 
-    summarize(value = sum(value))
+    summarize(value = sum(value)) %>%
+    mutate(value_new = value - lag(value))
   
   conf_first <- 
     data_conf %>% 
@@ -42,14 +44,17 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     group_by(country) %>% 
     mutate(maxv = max(value)) %>% 
     top_n(-1, wt = date) %>% 
-    select(-value) %>% 
+    select(-value, -value_new) %>% 
     rename(date_first = date)
   
-  tests <- fread("tests.csv", header = TRUE) %>%
-    mutate(date = as.Date(date, format = "%d.%m.%y")) %>%
+  tests <- fread("Tests.csv", header = TRUE) %>%
+    mutate(date = as.Date(date)) %>%
+    select(country,date,new_tests,tests_cumulative) %>%
     group_by(country) %>%
     mutate(test_latest = ifelse(date == max(date), 1, 0)) %>%
-    ungroup(.)
+    ungroup(.) %>%
+    rename(tests = tests_cumulative) %>%
+    rename(tests_new = new_tests)
   
   conf <- 
     data_conf %>% 
@@ -61,6 +66,8 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     left_join(., tests) %>%
     mutate(tests_per_1M = tests/pop) %>%
     mutate(cases_per_test = value/tests) %>%
+    mutate(tests_per_1M_new = tests_new/pop) %>%
+    mutate(cases_per_test_new = value_new/tests_new) %>%    
     left_join(., land) %>%
     mutate(pop_density = pop/land) %>%
     select(-date_first, -pop)
@@ -101,9 +108,11 @@ Idea:
 
 ![](main_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
+![](main_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
 ### Forecast
 
     ## Joining, by = "country"
     ## Joining, by = "country"
 
-![](main_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](main_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
