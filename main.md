@@ -7,8 +7,9 @@ MK
 
 ``` r
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv"
+url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
 MIN_DATE <- "2020-03-13"
-TODAY    <- "2020-03-22"
+TODAY    <- "2020-03-23"
 TAKE_LOG <- TRUE
 ```
 
@@ -21,6 +22,10 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     select(`Country Name`, `2018`) %>% 
     rename(country = `Country Name`, pop = `2018`) %>%
     mutate(pop = pop/1000000)
+
+  land  <- fread("API_AG.LND.TOTL.K2_DS2_en_csv_v2_888929.csv", header = TRUE) %>% 
+    select(`Country Name`, `2018`) %>% 
+    rename(country = `Country Name`, land = `2018`)
   
   data_conf <- 
     fread(url_conf) %>% 
@@ -56,6 +61,8 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     left_join(., tests) %>%
     mutate(tests_per_1M = tests/pop) %>%
     mutate(cases_per_test = value/tests) %>%
+    left_join(., land) %>%
+    mutate(pop_density = pop/land) %>%
     select(-date_first, -pop)
 
   conf_filtered <- 
@@ -82,16 +89,21 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
 
 ![](main_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
+![](main_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+Hipoteza: im większa gęstość zaludnienia, tym szybciej powinien krążyć
+wirus.
+
 ### Rates:
 
 Idea:
 <https://ourworldindata.org/grapher/tests-vs-confirmed-cases-covid-19-per-million>
 
-![](main_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](main_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ### Forecast
 
     ## Joining, by = "country"
     ## Joining, by = "country"
 
-![](main_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](main_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
