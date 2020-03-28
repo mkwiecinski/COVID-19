@@ -10,7 +10,7 @@ url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/cs
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
 MIN_DATE_TESTS <- "2020-03-10"
 MIN_DATE <- "2020-03-17"
-TODAY    <- "2020-03-26"
+TODAY    <- "2020-03-27"
 TAKE_LOG <- TRUE
 ```
 
@@ -49,6 +49,13 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
   
   tests <- fread("Tests.csv", header = TRUE) %>%
     mutate(date = as.Date(date)) %>%
+    mutate(
+      country = if_else(country == "Czech Republic", "Czechia",country),
+      country = if_else(country == "Iran (Islamic Republic of)", "Iran",country),
+      country = if_else(country == "Republic of Korea", "Korea, South",country),
+      country = if_else(country == "USA", "US",country),
+      country = if_else(country == "Mainland China", "China",country)
+    ) %>%
     select(country,date,new_tests,tests_cumulative) %>%
     group_by(country) %>%
     mutate(test_latest = ifelse(date == max(date), 1, 0)) %>%
