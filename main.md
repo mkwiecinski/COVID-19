@@ -6,18 +6,20 @@ MK
 ## Params
 
 ``` r
-url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv"
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
+url_dead <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
+MIN_VALUE <- 5000
+MIN_VALUE_DEATHS <- 500
 MIN_DATE_TESTS <- "2020-03-10"
-MIN_DATE <- "2020-03-17"
-TODAY    <- "2020-03-27"
+MIN_DATE <- "2020-03-20"
+TODAY    <- "2020-03-28"
 TAKE_LOG <- TRUE
 ```
 
 ## Calc
 
 ``` r
-build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CHART_MAX = 10000, countries_include = c("Poland")){
+build_data <- function(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = 10000, countries_include = c("Poland"), dead=FALSE){
 
   population <- fread("API_SP.POP.TOTL_DS2_en_csv_v2_866861.csv", header = TRUE) %>% 
     select(`Country Name`, `2018`) %>% 
@@ -29,7 +31,7 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = 1000, MAX_CASES = Inf, CH
     rename(country = `Country Name`, land = `2018`)
   
   data_conf <- 
-    fread(url_conf) %>% 
+    fread(ifelse(dead,url_dead,url_conf)) %>% 
     melt(., id.vars = c(1,2,3,4)) %>% 
     mutate (date = as.Date(variable, format = "%m/%d/%y")) %>% 
     select(-variable) %>% 
@@ -123,3 +125,9 @@ Idea:
     ## Joining, by = "country"
 
 ![](main_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+### Deaths
+
+![](main_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+![](main_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
