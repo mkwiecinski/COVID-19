@@ -342,7 +342,7 @@ countries_include = c("Poland","Austria","Belgium","Denmark","France","Germany",
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 countries_include <- c("Poland", "South Korea", "Germany")
-conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = MIN_VALUE_DEATHS, MAX_CASES = Inf, CHART_MAX = Inf, countries_include, dead = TRUE) %>%
+conf_filtered <- build_data(START_CASES_NO = 10, MIN_CASES = MIN_VALUE_DEATHS, MAX_CASES = Inf, CHART_MAX = Inf, countries_include, dead = TRUE) %>%
   mutate(value_per_1M = log(value_per_1M))
 
 
@@ -350,23 +350,23 @@ ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) +
   geom_point(alpha = 0.7, size = 1) + 
   geom_line(alpha = 0.2) +
   geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1, size = 3) +
-  labs(y="Logged number of deaths per 1M inhabitants", x = "Days from 1st death") +
-  labs(title = "7.1 Logged number of deaths per 1M inhabitans, Day 0 = 1 case", subtitle = paste0("countries > ",MIN_VALUE_DEATHS," nominal deaths + Poland")) +
+  labs(y="Logged number of deaths per 1M inhabitants", x = "Days from 10th death") +
+  labs(title = "7.1 Logged number of deaths per 1M inhabitans, Day 0 = 10 deaths", subtitle = paste0("countries > ",MIN_VALUE_DEATHS," nominal deaths + Poland")) +
   labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
   theme(legend.position="none")
 ```
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 countries_include <- c("Poland", "South Korea", "Germany")
-conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = MIN_VALUE_DEATHS, MAX_CASES = Inf, CHART_MAX = Inf, countries_include, dead = TRUE)
+conf_filtered <- build_data(START_CASES_NO = 10, MIN_CASES = MIN_VALUE_DEATHS, MAX_CASES = Inf, CHART_MAX = Inf, countries_include, dead = TRUE)
 
 
 ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
   geom_point(alpha = 0.7, size = 1) + 
   geom_line(alpha = 0.2) +
   geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1, size = 3) +
-  labs(y="Number of deaths per 1M inhabitants", x = "Days from 1st death") +
-  labs(title = "7.2 Number of deaths per 1M inhabitans, Day 0 = 1 case", subtitle = paste0("countries > ",MIN_VALUE_DEATHS," nominal deaths + Poland")) +
+  labs(y="Number of deaths per 1M inhabitants", x = "Days from 10th death") +
+  labs(title = "7.2 Number of deaths per 1M inhabitans, Day 0 = 10 deaths", subtitle = paste0("countries > ",MIN_VALUE_DEATHS," nominal deaths + Poland")) +
   labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
   theme(legend.position="none")
 ```
