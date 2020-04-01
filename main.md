@@ -11,14 +11,21 @@ url_dead <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/cs
 MIN_VALUE <- 5000
 MIN_VALUE_DEATHS <- 500
 MIN_DATE_TESTS <- "2020-03-10"
-MIN_DATE <- "2020-03-20"
-TODAY    <- "2020-03-29"
+MIN_DATE <- "2020-03-21"
+TODAY    <- "2020-03-31"
 TAKE_LOG <- TRUE
 ```
 
 ## Calc
 
 ``` r
+START_CASES_NO = 1
+MIN_CASES = MIN_VALUE
+MAX_CASES = Inf
+CHART_MAX = 10000
+countries_include = c("Poland")
+dead = FALSE
+
 build_data <- function(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = 10000, countries_include = c("Poland"), dead=FALSE){
 
   population <- fread("API_SP.POP.TOTL_DS2_en_csv_v2_866861.csv", header = TRUE) %>% 
@@ -60,6 +67,7 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = In
     ) %>%
     select(country,date,new_tests,tests_cumulative) %>%
     group_by(country) %>%
+    filter(new_tests > 0) %>%
     mutate(test_latest = ifelse(date == max(date), 1, 0)) %>%
     ungroup(.) %>%
     rename(tests = tests_cumulative) %>%
@@ -91,26 +99,30 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = In
 }
 ```
 
-### Plots
+## Plots
+
+### 1\. Log(number of cases)
 
 ![](main_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ![](main_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
-![](main_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+### 2\. Nominal number of cases
 
-![](main_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+Removed.
+
+### 3\. Nominal number of cases per 1M inhabitants
 
 ![](main_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ![](main_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-![](main_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+### 4\. Other hypothesis
 
 Hipoteza: im większa gęstość zaludnienia, tym szybciej powinien krążyć
 wirus.
 
-### Rates:
+### 5\. Tests
 
 Idea:
 <https://ourworldindata.org/grapher/tests-vs-confirmed-cases-covid-19-per-million>
@@ -119,14 +131,11 @@ Idea:
 
 ![](main_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
-### Forecast
+### 6\. Forecast
 
-    ## Joining, by = "country"
-    ## Joining, by = "country"
+Removed.
 
-![](main_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
-
-### Deaths
+### 7\. Deaths
 
 ![](main_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
