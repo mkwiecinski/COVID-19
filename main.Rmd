@@ -24,27 +24,33 @@ library(zoo)
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
 url_dead <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 lookup <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv"
-MIN_VALUE <- 8000
-MIN_VALUE_DEATHS <- 750
+MIN_CASES_CUM     <- 20000
+MIN_DEATHS_CUM    <- 1000
 MIN_DATE_TESTS <- "2020-03-10"
-MIN_DATE <- "2020-03-25"
-TODAY    <- "2020-04-06"
+MIN_DATE       <- "2020-03-25"
+TODAY          <- "2020-04-08"
 TAKE_LOG <- TRUE
+START_CASES_NO = 1
+START_DEATHS_NO = 10
+CHART_MAX = 10000
+countries_include = c("Poland", "Czechia", "Sweden")
+dead = FALSE
+MA = 1
+pc = TRUE
+cumulative = TRUE
+
+labs_x = "Days from patient 0"
+subtitle = NA
+caption = "data source: github.com/CSSEGISandData/COVID-19"
+legend_off = TRUE
+
 ```
 
 
 ## Calc
 
 ```{r}
-START_CASES_NO = 1
-MIN_CASES = MIN_VALUE
-MAX_CASES = Inf
-CHART_MAX = 10000
-countries_include = c("Poland")
-dead = FALSE
-MA = 3
-
-build_data <- function(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = 10000, countries_include = c("Poland"), dead=FALSE, cumulative = TRUE, MA = 3){
+build_data <- function(START_CASES_NO = 1, dead=FALSE, MA = 1, cumulative = TRUE, pc = TRUE, START_DEATHS_NO = 1){
 
   population <- fread("API_SP.POP.TOTL_DS2_en_csv_v2_866861.csv", header = TRUE) %>% 
     select(`Country Name`, `2018`) %>% 
@@ -55,35 +61,14 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = In
     select(`Country Name`, `2018`) %>% 
     rename(country = `Country Name`, land = `2018`)
   
-  data_conf <- 
-    fread(ifelse(dead,url_dead,url_conf)) %>% 
-    melt(., id.vars = c(1,2,3,4)) %>% 
-    mutate (date = as.Date(variable, format = "%m/%d/%y")) %>% 
-    select(-variable) %>% 
-    rename(country = `Country/Region`, province = `Province/State`) %>% 
-    group_by(country, date) %>% 
-    summarize(value = sum(value)) %>%
-    mutate(value_new = value - lag(value)) %>%
-    mutate(value_ma = rollapply(value,MA,mean,align='right',fill=NA)) %>%
-    mutate(value_ma_new = rollapply(value_new,MA,mean,align='right',fill=NA))
-  
-  conf_first <- 
-    data_conf %>% 
-    filter(value > START_CASES_NO) %>% 
-    group_by(country) %>% 
-    mutate(maxv = max(value)) %>% 
-    top_n(-1, wt = date) %>% 
-    select(-value, -value_new, -value_ma, -value_ma_new) %>% 
-    rename(date_first = date)
-  
   tests <- fread("Tests.csv", header = TRUE) %>%
     mutate(date = as.Date(date)) %>%
     mutate(
-      country = if_else(country == "Czech Republic", "Czechia",country),
-      country = if_else(country == "Iran (Islamic Republic of)", "Iran",country),
-      country = if_else(country == "Republic of Korea", "Korea, South",country),
-      country = if_else(country == "USA", "US",country),
-      country = if_else(country == "Mainland China", "China",country)
+      country = ifelse(country == "Czech Republic", "Czechia",country),
+      country = ifelse(country == "Iran (Islamic Republic of)", "Iran",country),
+      country = ifelse(country == "Republic of Korea", "Korea, South",country),
+      country = ifelse(country == "USA", "US",country),
+      country = ifelse(country == "Mainland China", "China",country)
     ) %>%
     select(country,date,new_tests,tests_cumulative) %>%
     group_by(country) %>%
@@ -92,40 +77,106 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = In
     ungroup(.) %>%
     rename(tests = tests_cumulative) %>%
     rename(tests_new = new_tests) %>%
-    mutate(tests_ma = rollapply(tests,MA,mean,align='right',fill=NA)) %>%
-    mutate(tests_ma_new = rollapply(tests_new,MA,mean,align='right',fill=NA))
+    mutate(
+      tests = case_when(cumulative == TRUE ~ tests, TRUE ~ tests_new),
+      tests = case_when(MA > 1 ~ rollapply(tests,MA,mean,align='right',fill=NA_real_), TRUE ~ 1.0*tests)
+    )
   
-  conf <- 
-    data_conf %>% 
-    left_join(., conf_first, by = "country") %>% 
+  data <- 
+    fread(ifelse(dead,url_dead,url_conf)) %>%
+    melt(., id.vars = c(1,2,3,4)) %>% 
+    mutate (date = as.Date(variable, format = "%m/%d/%y")) %>% 
+    select(-variable) %>% 
+    rename(country = `Country/Region`, province = `Province/State`) %>% 
+    group_by(country, date) %>% 
+    summarize(value = sum(value))
+  
+  data_first <- 
+    data %>% 
+    filter((dead == FALSE & value > START_CASES_NO) | (dead == TRUE & value > START_DEATHS_NO)) %>% 
+    group_by(country) %>% 
+    mutate(maxv = max(value)) %>% 
+    top_n(-1, wt = date) %>% 
+    select(country, date, maxv) %>% 
+    rename(date_first = date)
+  
+  data_conf <- 
+    data %>% 
+    left_join(., data_first, by = "country") %>% 
+    mutate(is_maxv = ifelse(value == maxv, 1, 0)) %>%
     mutate(days = date-date_first) %>% 
     filter(days >=0) %>% 
-    left_join(., population) %>% 
-    mutate(value_per_1M = value/pop) %>%
-    mutate(value_per_1M_new = value_new/pop) %>%
-    mutate(value_ma_per_1M = value_ma/pop) %>%
-    mutate(value_ma_per_1M_new = value_ma_new/pop) %>%
+    mutate(
+      value = case_when(cumulative == TRUE ~ value, TRUE ~ value -dplyr::lag(value)),
+    ) %>%  
     left_join(., tests) %>%
-    mutate(tests_per_1M = tests/pop) %>%
-    mutate(tests_per_1M_new = tests_new/pop) %>%
-    mutate(tests_ma_per_1M = tests_ma/pop) %>%
-    mutate(tests_ma_per_1M_new = tests_ma_new/pop) %>%
-    mutate(cases_per_test = value/tests) %>%
-    mutate(cases_per_test_new = value_new/tests_new) %>%    
-    mutate(cases_ma_per_test = rollapply(value/tests,MA,mean,align='right',fill=NA)) %>%
-    mutate(cases_ma_per_test_new = rollapply(value_new/tests_new,MA,mean,align='right',fill=NA) ) %>%        
+    mutate(
+      cases_per_test = case_when(MA > 1 ~ rollapply(value/tests,MA,mean,align='right',fill=NA_real_), TRUE ~ 1.0*value/tests)
+    ) %>% 
+    
+    left_join(., population) %>% 
+    mutate(
+       value = case_when(MA > 1 ~ rollapply(value      ,MA,mean,align='right',fill=NA_real_), TRUE ~ 1.0*value),
+       value = case_when(pc == TRUE ~ value/pop, TRUE ~ 1.0*value),
+       tests = case_when(pc == TRUE ~ tests/pop, TRUE ~ 1.0*tests)
+    ) %>%
+    
     left_join(., land) %>%
     mutate(pop_density = pop/land) %>%
     select(-date_first, -pop)
 
+  MIN_VALUE <- if_else(dead == FALSE, MIN_CASES_CUM, MIN_DEATHS_CUM)
+
   conf_filtered <- 
-    conf %>% 
-    filter((maxv > MIN_CASES & maxv < MAX_CASES & country != "China") | country %in% countries_include) %>%
-    filter(value < CHART_MAX) %>%
-    mutate(maxv = ifelse(value == maxv, 1, 0))
+    data_conf %>% 
+    filter(
+      (
+        maxv > MIN_VALUE 
+        & country != "China" 
+      ) 
+      | country %in% countries_include
+      ) %>%
+    filter(value < CHART_MAX)
   
   return(conf_filtered)
 }
+
+
+plot_chart <- function(
+  data,
+  TAKE_LOG,
+  dead = FALSE,
+  labs_y, 
+  labs_x = "Days from patient 0",
+  title, 
+  subtitle = NA,
+  caption = "data source: github.com/CSSEGISandData/COVID-19", 
+  legend_off = TRUE
+ ){
+  
+  data <- data %>%
+    mutate(
+      value = if(TAKE_LOG) log(value)   else value
+    )
+  
+  if(is.na(subtitle)){
+    subtitle <- paste0("countries > ", ifelse(dead, MIN_DEATHS_CUM, MIN_CASES_CUM)," + ",paste(countries_include,collapse=", "))
+  }
+  
+  
+  g <- 
+    ggplot(data, aes(days, value, colour = country)) + 
+    geom_point(alpha = 0.7, size = 1) + 
+    geom_line(alpha = 0.2) +
+    geom_text(data = data %>% filter(is_maxv == 1), aes(label = country, colour = country, x = days, y = value), hjust = -.1, size = 3) +
+    labs(y=labs_y, x = labs_x) +
+    labs(title = title, subtitle = subtitle) +
+    labs(caption = caption) +
+    if(legend_off) theme(legend.position="none")
+  
+  return(g)
+}
+
 ```
 
 
@@ -133,118 +184,54 @@ build_data <- function(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = In
 
 ### 1. Log(number of cases)
 
-```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = Inf, countries_include)
+Removed.
 
-ggplot(conf_filtered, aes(days, log(value), colour = country)) + 
-  geom_point(alpha = 0.7, size = 1) + 
-  geom_line(alpha = 0.2) +
-  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = log(value)), hjust = -.1, size = 3) +
-  labs(y="Log(Number of cases)", x = "Days from patient 0") +
-  labs(title = "1.1 Log(Number of cases), Day 0 = 1 case", subtitle = paste0("countries > ",MIN_VALUE," + Poland")) +
-  labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-  theme(legend.position="none")
+```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
+# plot_chart(data = build_data(START_CASES_NO = 1),
+#            TAKE_LOG = TRUE,
+#            labs_y = "Log(Number of cases)",
+#            title = "1.1 Log(Number of cases), Day 0 = 1 case",
+#            )
 ```
 
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = Inf, countries_include)
+# plot_chart(data = build_data(START_CASES_NO = 30),
+#            TAKE_LOG = TRUE,
+#            labs_y = "Log(Number of cases)",
+#            title = "1.2 Log(Number of cases), Day 0 = 30 cases"
+#            )
 
-
-ggplot(conf_filtered, aes(days, log(value), colour = country)) + 
-  geom_point(alpha = 0.7, size = 1) + 
-  geom_line(alpha = 0.2) +
-  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = log(value)), hjust = -.1, size = 3) +
-  labs(y="Log(Number of cases)", x = "Days from patient 0") +
-  labs(title = "1.2 Log(Number of cases), Day 0 = 30 cases", subtitle = paste0("countries > ",MIN_VALUE," + Poland")) +
-  labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-  theme(legend.position="none")
 ```
 
 ### 2. Nominal number of cases
 
 Removed.
 
-```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-# countries_include <- c("Poland")
-# conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = 40000, countries_include)
-# 
-# ggplot(conf_filtered, aes(days, value, colour = country)) + 
-#   geom_point(alpha = 0.7, size = 1) + 
-#   geom_line(alpha = 0.2) +
-#   geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value), hjust = -.1, size = 3) +
-#   labs(y="Number of cases", x = "Days from patient 0") +
-#   labs(title = "2.1 Number of cases, Day 0 = 1 case", subtitle = paste0("countries > ",MIN_VALUE," + Poland, crop at 40000")) +
-#   labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-#   theme(legend.position="none")
-```
-
-
-```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-# countries_include <- c("Poland")
-# conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = 40000, countries_include)
-# 
-# 
-# ggplot(conf_filtered, aes(days, value, colour = country)) + 
-#   geom_point(alpha = 0.7, size = 1) + 
-#   geom_line(alpha = 0.2) +
-#   geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value), hjust = -.1, size = 3) +
-#   labs(y="Number of cases", x = "Days from patient 0") +
-#   labs(title = "2.2 Number of cases, Day 0 = 30 cases", subtitle = paste0("countries > ",MIN_VALUE," + Poland, crop at 40000")) +
-#   labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-#   theme(legend.position="none")
-```
-
 ### 3. Nominal number of cases per 1M inhabitants
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = Inf, countries_include)
+plot_chart(data = build_data(START_CASES_NO = 1),
+          TAKE_LOG = FALSE,
+          labs_y = "Number of cases per 1M inhabitants",
+          title = "3.1 Number of cases per 1M inhabitans, Day 0 = 1 case"
+          )
 
-ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
-  geom_point(alpha = 0.7, size = 1) + 
-  geom_line(alpha = 0.2) +
-  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1, size = 3) +
-  labs(y="Number of cases per 1M inhabitants", x = "Days from patient 0") +
-  labs(title = "3.1 Number of cases per 1M inhabitans, Day 0 = 1 case", subtitle = paste0("countries > ",MIN_VALUE," nominal cases + Poland")) +
-  labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-  theme(legend.position="none")
 ```
 
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = Inf, countries_include)
 
-
-ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
-  geom_point(alpha = 0.7, size = 1) + 
-  geom_line(alpha = 0.2) +
-  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1, size = 3) +
-  labs(y="Number of cases per 1M inhabitants", x = "Days from patient 0") +
-  labs(title = "3.2 Number of cases per 1M inhabitans, Day 0 = 30 cases", subtitle = paste0("countries > ",MIN_VALUE," nominal cases + Poland")) +
-  labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-  theme(legend.position="none")
+plot_chart(data = build_data(START_CASES_NO = 30),
+          TAKE_LOG = FALSE,
+          labs_y = "Number of cases per 1M inhabitants",
+          title = "3.2 Number of cases per 1M inhabitans, Day 0 = 30 cases"
+          )
 ```
 
 ### 4. Other hypothesis
 
-```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-# countries_include <- c("Poland")
-# conf_filtered <- build_data(START_CASES_NO = 30, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = Inf, countries_include) %>%
-#   filter(maxv == 1)
-# 
-# ggplot(conf_filtered, aes(pop_density, value_per_1M, colour = country)) + 
-#   geom_point(alpha = 0.7, size = 1) + 
-#   geom_line(alpha = 0.2) +
-#   geom_text(data = conf_filtered, aes(label = country, colour = country, x = pop_density, y = value_per_1M), hjust = -.1, size = 3) +
-#   labs(y="Number of cases per 1M inhabitants", x = "Pop density") +
-#   labs(title = "4.1 Number of cases per 1M inhabitans vs pop density", subtitle = paste0("countries > ",MIN_VALUE," nominal cases + Poland")) +
-#   labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-#   theme(legend.position="none")
-```
+Usunietę.
 
 Hipoteza: im większa gęstość zaludnienia, tym szybciej powinien krążyć wirus.
 
@@ -254,184 +241,87 @@ Hipoteza: im większa gęstość zaludnienia, tym szybciej powinien krążyć wi
 Idea: https://ourworldindata.org/grapher/tests-vs-confirmed-cases-covid-19-per-million
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = MIN_VALUE, MAX_CASES = Inf, CHART_MAX = Inf, countries_include) %>%
-  filter(value_new > 0 & tests_new > 0) %>%
-  mutate(tests_per_1M_new = log(tests_per_1M_new)) %>%
-  mutate(cases_per_test_new = log(cases_per_test_new)) %>%
+
+conf_filtered <- build_data(START_CASES_NO = 1, cumulative = TRUE) %>%
+  filter(value >0 & tests > 0) %>%
+  mutate(tests = log(tests)) %>%
+  mutate(cases_per_test = log(cases_per_test)) %>%
   filter(date > MIN_DATE_TESTS)
 
 
-ggplot(conf_filtered, aes(tests_per_1M, cases_per_test, colour = country)) + 
-  geom_text(data = conf_filtered %>% filter(test_latest == 0), aes(label = day(date), colour = country, x = tests_per_1M, y = cases_per_test), size = 2, alpha = 0.5) +
+ggplot(conf_filtered, aes(tests, cases_per_test, colour = country)) + 
+  geom_text(data = conf_filtered %>% filter(test_latest == 0), aes(label = day(date), colour = country, x = tests, y = cases_per_test), size = 2, alpha = 0.5) +
   geom_line(alpha = 0.3) +
-  geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = country, colour = country, x = tests_per_1M, y = cases_per_test), nudge_y = 0.02, size = 3) +
-  geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = day(date), colour = country, x = tests_per_1M, y = cases_per_test), size = 3) +
+  geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = country, colour = country, x = tests, y = cases_per_test), nudge_y = 0.02, size = 3) +
+  geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = day(date), colour = country, x = tests, y = cases_per_test), size = 3) +
   labs(y="Number of cases per 1 test, cumulative", x = "Number of tests per 1M inhabitants, cumulative") +
-  labs(title = "5.1 Number of tests per 1M inhabitants vs cases per test, cumulative", subtitle = paste0("countries > ",MIN_VALUE," nominal cases + Poland. Point label = date")) +
+  labs(title = "5.1 Number of tests per 1M inhabitants vs cases per test, cumulative", subtitle = paste0("countries > ",MIN_CASES_CUM," nominal cases + Poland. Point label = date")) +
   labs(caption = "source: github.com/CSSEGISandData/COVID-19, finddx.org/covid-19/test-tracker") +
   theme(legend.position = "none")
 ```
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-countries_include <- c("Poland")
-conf_filtered <- build_data(START_CASES_NO = 1, MIN_CASES = 2*MIN_VALUE, MAX_CASES = Inf, CHART_MAX = Inf, countries_include) %>%
-  filter(value_new > 0 & tests_new > 0) %>%
-  mutate(tests_per_1M_new = log(tests_per_1M_new)) %>%
-  mutate(cases_per_test_new = log(cases_per_test_new)) %>%
+conf_filtered <- build_data(START_CASES_NO = 1) %>%
+  filter(value > 0 & tests > 0) %>%
+  mutate(tests = log(tests)) %>%
+  mutate(cases_per_test = log(cases_per_test)) %>%
   filter(date > MIN_DATE_TESTS)
 
 
-ggplot(conf_filtered, aes(tests_per_1M_new, cases_per_test_new, colour = country)) + 
-  geom_text(data = conf_filtered %>% filter(test_latest == 0), aes(label = day(date), colour = country, x = tests_per_1M_new, y = cases_per_test_new), size = 2, alpha = 0.5) +
+ggplot(conf_filtered, aes(tests, cases_per_test, colour = country)) + 
+  geom_text(data = conf_filtered %>% filter(test_latest == 0), aes(label = day(date), colour = country, x = tests, y = cases_per_test), size = 2, alpha = 0.5) +
   geom_line(alpha = 0.3) +
-  geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = country, colour = country, x = tests_per_1M_new, y = cases_per_test_new), nudge_y = 0.02, size = 3) +
-  geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = day(date), colour = country, x = tests_per_1M_new, y = cases_per_test_new), size = 3) +
+  geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = country, colour = country, x = tests, y = cases_per_test), nudge_y = 0.02, size = 3) +
+  geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = day(date), colour = country, x = tests, y = cases_per_test), size = 3) +
   lims(x= c(1,10), y = c(-7, 0)) +
   labs(y="Log of Number of new cases per 1 new test", x = "Log of Number of new tests per 1M inhabitants") +
-  labs(title = "5.2 Log Number of new tests per 1M inhabitants vs log new cases per 1 new test", subtitle = paste0("countries > ",2*MIN_VALUE," nominal cases + Poland. Point label = date")) +
+  labs(title = "5.2 Log Number of new tests per 1M inhabitants vs log new cases per 1 new test", subtitle = paste0("countries > ",MIN_CASES_CUM," nominal cases + Poland. Point label = date")) +
   labs(caption = "source: github.com/CSSEGISandData/COVID-19, finddx.org/covid-19/test-tracker")
 ```
 
 ### 6. Forecast
 
 Removed.
-```{r, echo = FALSE}
-# countries_include = c("Poland","Austria","Belgium","Denmark","France","Germany","Iran","Italy","Korea, South","Netherlands","Norway","Spain","Sweden","Switzerland","US","United Kingdom")
-#   
-#   data_conf <- 
-#     fread(url_conf) %>% 
-#     melt(., id.vars = c(1,2,3,4)) %>% 
-#     mutate (date = as.Date(variable, format = "%m/%d/%y")) %>% 
-#     select(-variable) %>% 
-#     rename(country = `Country/Region`, province = `Province/State`) %>% 
-#     group_by(country, date) %>% 
-#     summarize(value = sum(value)) %>%
-#     mutate(log_change = log(value) - log(lag(value, order_by = date))) %>%
-#     mutate(day0 = min(date)) %>%
-#     mutate(day_no = date-day0) %>%
-#     select(-day0)
-#   
-#   conf_models <- 
-#     data_conf %>% 
-#     filter(value > 0 & log_change != Inf) %>%
-#     nest(-country) %>%
-#     mutate(
-#       fit = map(data, ~lm(log_change ~ day_no, data = .x)),
-#       tidied = map(fit, tidy)
-#     ) %>%
-#     unnest(tidied) %>%
-#     select(country, estimate, term)
-#   
-#   data_chart <- 
-#     data_conf %>%
-#     group_by(country) %>%
-#     complete(date = seq(floor_date(min(date),   "day"), max(date)+3, 1)) %>%
-#     mutate(max_date = max(date)) %>%
-#     ungroup(.) %>%
-#     mutate(max_date = if_else(date == max_date, 1, 0)) %>%
-#     left_join(conf_models %>% filter(term == "(Intercept)")) %>%
-#     rename( intercept = estimate) %>%
-#     select(-term) %>%
-#     left_join(conf_models %>% filter(term == "day_no")) %>%
-#     select(-term) %>%
-#     mutate(day_no = as.integer(day_no, na.rm = TRUE)) %>%
-#     mutate(fcst  = if_else(is.na(value), 1, 0)) %>%
-#     mutate (day_no  = if_else(fcst == 1, lag(day_no) + 1, 1.0*day_no)) %>%
-#     mutate (value_f = if_else(fcst == 1, dplyr::lag(value)  *exp(intercept+day_no*estimate), 1.0*value) ) %>%
-#     mutate (day_no  = if_else(fcst == 1, lag(day_no) + 1, 1.0*day_no)) %>%
-#     mutate (value_f = if_else(fcst == 1, dplyr::lag(value_f)*exp(intercept+day_no*estimate), 1.0*value) ) %>%
-#     mutate (day_no  = if_else(fcst == 1, lag(day_no) + 1, 1.0*day_no)) %>%
-#     mutate (value_f = if_else(fcst == 1, dplyr::lag(value_f)*exp(intercept+day_no*estimate), 1.0*value) ) %>%
-#     mutate (value_f =  ifelse(fcst == 1, value_f, NA)) %>%
-#     select(-log_change, -estimate, -intercept) %>%
-#     filter(country %in% countries_include) %>%
-#     filter(date > MIN_DATE) %>%
-#     mutate(
-#       label   = if_else(fcst == 0, 1.0*value, round(value_f,0)),
-#       value   = if(TAKE_LOG) log(value)   else value,
-#       value_f = if(TAKE_LOG) log(value_f) else value_f
-#     )
-#   
-#   ggplot(      data = data_chart,                       aes(x = date, colour = country ) ) + 
-#     geom_point(data = data_chart %>% filter(fcst == 0), aes(y = value), alpha = 0.1) + 
-#     geom_line( data = data_chart %>% filter(fcst == 0), aes(y = value), alpha = 0.1) +
-#     geom_point(data = data_chart %>% filter(fcst == 1), aes(y = value_f), alpha = 0.9) + 
-#     geom_line( data = data_chart %>% filter(fcst == 1), aes(y = value_f), alpha = 0.9) +
-#     geom_text( data = data_chart %>% filter(date == TODAY), aes(label = country, colour = country, x = date, y = value), 
-#                vjust = 0, nudge_x = 0.5, size = 3) +
-#     geom_text( data = data_chart %>% filter(fcst == 1), aes(label = label, colour = country, x = date, y = value_f), 
-#                vjust = 0, nudge_y = 0.15, size = 3) +
-#     labs(y=paste0(ifelse(TAKE_LOG, "Log of",""),"Number of cases in 3 days"), x = "Date") +
-#     labs(title = "6.1 Number of cases in 3 days forecast", subtitle = paste0("countries > ",MIN_VALUE," + Poland")) +
-#     labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-#     theme(legend.position="none")
-```
 
 ### 7. Deaths (cumulative)
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-countries_include <- c("Poland", "South Korea", "Germany")
-conf_filtered <- build_data(START_CASES_NO = 10, MIN_CASES = MIN_VALUE_DEATHS, MAX_CASES = Inf, CHART_MAX = Inf, countries_include, dead = TRUE) %>%
-  mutate(value_per_1M = log(value_per_1M))
 
-
-ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
-  geom_point(alpha = 0.7, size = 1) + 
-  geom_line(alpha = 0.2) +
-  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1, size = 3) +
-  labs(y="Logged cumulative number of deaths per 1M inhabitants", x = "Days from 10th death") +
-  labs(title = "7.1 Logged cumulative number of deaths per 1M inhabitans, Day 0 = 10 deaths", subtitle = paste0("countries > ",MIN_VALUE_DEATHS," nominal deaths + Poland")) +
-  labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-  theme(legend.position="none")
+plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE),
+          TAKE_LOG = TRUE,
+          dead = TRUE,
+          labs_y = "Logged cumulative number of deaths per 1M inhabitants",
+          title = "7.1 Logged cumulative number of deaths per 1M inhabitans, Day 0 = 10 deaths",
+          )
 ```
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-countries_include <- c("Poland", "South Korea", "Germany")
-conf_filtered <- build_data(START_CASES_NO = 10, MIN_CASES = MIN_VALUE_DEATHS, MAX_CASES = Inf, CHART_MAX = Inf, countries_include, dead = TRUE)
+plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE),
+          TAKE_LOG = FALSE,
+          dead = TRUE,
+          labs_y = "Cumulative number of deaths per 1M inhabitants",
+          title = "7.2 Cumulative number of deaths per 1M inhabitans, Day 0 = 10 deaths"
+          )
 
-
-ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
-  geom_point(alpha = 0.7, size = 1) + 
-  geom_line(alpha = 0.2) +
-  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1, size = 3) +
-  labs(y="Cumulative number of deaths per 1M inhabitants", x = "Days from 10th death") +
-  labs(title = "7.2 Cumulative number of deaths per 1M inhabitans, Day 0 = 10 deaths", subtitle = paste0("countries > ",MIN_VALUE_DEATHS," nominal deaths + Poland")) +
-  labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-  theme(legend.position="none")
 ```
 
 ### 8. Deaths
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-countries_include <- c("Poland", "South Korea", "Germany")
-conf_filtered <- build_data(START_CASES_NO = 10, MIN_CASES = MIN_VALUE_DEATHS, MAX_CASES = Inf, CHART_MAX = Inf, countries_include, dead = TRUE, cumulative = FALSE, MA = 3) %>%
-  mutate(value_per_1M = log(value_ma_per_1M_new))
 
-
-ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
-  geom_point(alpha = 0.7, size = 1) + 
-  geom_line(alpha = 0.2) +
-  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1, size = 3) +
-  labs(y="Logged number of deaths per 1M inhabitants, 3-day moving average", x = "Days from 10th death") +
-  labs(title = "8.1 Logged number of deaths per 1M inhabitans, Day 0 = 10 deaths", subtitle = paste0("countries > ",MIN_VALUE_DEATHS," nominal deaths + Poland")) +
-  labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-  theme(legend.position="none") #+
-  #ylim(0, NA)
+plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FALSE, MA = 3),
+          TAKE_LOG = TRUE,
+          dead = TRUE,
+          labs_y = "Logged number of deaths per 1M inhabitants, 3-day moving average",
+          title = "8.1 Logged number of deaths per 1M inhabitans, Day 0 = 10 deaths, 3-day moving average"
+          )
 ```
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-countries_include <- c("Poland", "South Korea", "Germany")
-conf_filtered <- build_data(START_CASES_NO = 10, MIN_CASES = MIN_VALUE_DEATHS, MAX_CASES = Inf, CHART_MAX = Inf, countries_include, dead = TRUE, cumulative = FALSE) %>%
-  mutate(value_per_1M = value_ma_per_1M_new)
-
-
-ggplot(conf_filtered, aes(days, value_per_1M, colour = country)) + 
-  geom_point(alpha = 0.7, size = 1) + 
-  geom_line(alpha = 0.2) +
-  geom_text(data = conf_filtered %>% filter(maxv == 1), aes(label = country, colour = country, x = days, y = value_per_1M), hjust = -.1, size = 3) +
-  labs(y="Number of deaths per 1M inhabitants, 3-day moving average", x = "Days from 10th death") +
-  labs(title = "8.2 Number of deaths per 1M inhabitans, Day 0 = 10 deaths, 3-day moving average", subtitle = paste0("countries > ",MIN_VALUE_DEATHS," nominal deaths + Poland")) +
-  labs(caption = "data source: github.com/CSSEGISandData/COVID-19") +
-  theme(legend.position="none")
+plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FALSE, MA = 3),
+          TAKE_LOG = FALSE,
+          dead = TRUE,
+          labs_y = "Logged number of deaths per 1M inhabitants, 3-day moving average",
+          title = "8.2 Number of deaths per 1M inhabitans, Day 0 = 10 deaths, 3-day moving average"
+          )
 ```
