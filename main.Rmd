@@ -25,10 +25,10 @@ url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/cs
 url_dead <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 lookup <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv"
 MIN_CASES_CUM     <- 20000
-MIN_DEATHS_CUM    <- 1000
+MIN_DEATHS_CUM    <- 1500
 MIN_DATE_TESTS <- "2020-03-10"
 MIN_DATE       <- "2020-03-25"
-TODAY          <- "2020-04-08"
+TODAY          <- "2020-04-10"
 TAKE_LOG <- TRUE
 START_CASES_NO = 1
 START_DEATHS_NO = 10
@@ -254,14 +254,14 @@ ggplot(conf_filtered, aes(tests, cases_per_test, colour = country)) +
   geom_line(alpha = 0.3) +
   geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = country, colour = country, x = tests, y = cases_per_test), nudge_y = 0.02, size = 3) +
   geom_text(data = conf_filtered %>% filter(test_latest == 1), aes(label = day(date), colour = country, x = tests, y = cases_per_test), size = 3) +
-  labs(y="Number of cases per 1 test, cumulative", x = "Number of tests per 1M inhabitants, cumulative") +
-  labs(title = "5.1 Number of tests per 1M inhabitants vs cases per test, cumulative", subtitle = paste0("countries > ",MIN_CASES_CUM," nominal cases + Poland. Point label = date")) +
+  labs(y="Log Number of cases per 1 test, cumulative", x = "Number of tests per 1M inhabitants, cumulative") +
+  labs(title = "5.1 Log Number of tests per 1M inhabitants vs cases per test, cumulative", subtitle = paste0("countries > ",MIN_CASES_CUM," nominal cases + Poland. Point label = date")) +
   labs(caption = "source: github.com/CSSEGISandData/COVID-19, finddx.org/covid-19/test-tracker") +
   theme(legend.position = "none")
 ```
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-conf_filtered <- build_data(START_CASES_NO = 1) %>%
+conf_filtered <- build_data(START_CASES_NO = 1, cumulative = FALSE) %>%
   filter(value > 0 & tests > 0) %>%
   mutate(tests = log(tests)) %>%
   mutate(cases_per_test = log(cases_per_test)) %>%

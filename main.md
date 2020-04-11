@@ -10,10 +10,10 @@ url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/cs
 url_dead <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 lookup <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv"
 MIN_CASES_CUM     <- 20000
-MIN_DEATHS_CUM    <- 1000
+MIN_DEATHS_CUM    <- 1500
 MIN_DATE_TESTS <- "2020-03-10"
 MIN_DATE       <- "2020-03-25"
-TODAY          <- "2020-04-08"
+TODAY          <- "2020-04-10"
 TAKE_LOG <- TRUE
 START_CASES_NO = 1
 START_DEATHS_NO = 10
