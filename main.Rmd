@@ -24,7 +24,7 @@ library(zoo)
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
 url_dead <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 lookup <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv"
-MIN_CASES_CUM     <- 20000
+MIN_CASES_CUM     <- 30000
 MIN_DEATHS_CUM    <- 1500
 MIN_DATE_TESTS <- "2020-03-10"
 MIN_DATE       <- "2020-03-25"
@@ -225,8 +225,17 @@ Removed.
 
 plot_chart(data = build_data(START_CASES_NO = 100),
           TAKE_LOG = FALSE,
-          labs_y = "Number of cases per 1M inhabitants",
-          title = "3.2 Number of cases per 1M inhabitans, Day 0 = 100 cases"
+          labs_y = "Cumulative number of cases per 1M inhabitants",
+          title = "3.2 Cumulative number of cases per 1M inhabitans, Day 0 = 100 cases"
+          )
+```
+
+```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
+plot_chart(data = build_data(START_CASES_NO = 100, cumulative = FALSE, MA = 7),
+          TAKE_LOG = FALSE,
+          dead = FALSE,
+          labs_y = "Number of cases per 1M inhabitants, 7-day moving average",
+          title = "3.3 Number of cases per 1M inhabitans, Day 0 = 100 cases, 7-day moving average"
           )
 ```
 
