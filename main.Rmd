@@ -24,8 +24,8 @@ library(zoo)
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
 url_dead <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 lookup <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv"
-MIN_CASES_CUM     <- 30000
-MIN_DEATHS_CUM    <- 2000
+MIN_CASES_CUM     <- 35000
+MIN_DEATHS_CUM    <- 3000
 MIN_DATE_TESTS <- "2020-03-10"
 MIN_DATE       <- "2020-03-25"
 TODAY          <- "2020-04-11"
@@ -33,7 +33,7 @@ TAKE_LOG <- TRUE
 START_CASES_NO = 1
 START_DEATHS_NO = 10
 CHART_MAX = 1000000
-countries_include = c("Poland", "Czechia", "Sweden")
+countries_include = c("Poland", "Czechia", "Sweden", "Singapore", "Korea, South")
 dead = FALSE
 MA = 1
 pc = TRUE
