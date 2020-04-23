@@ -319,19 +319,19 @@ plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE),
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
 
-plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FALSE, MA = 3),
+plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FALSE, MA = 7),
           TAKE_LOG = TRUE,
           dead = TRUE,
           labs_y = "Logged number of deaths per 1M inhabitants, 3-day moving average",
-          title = "8.1 Logged number of deaths per 1M inhabitans, Day 0 = 10 deaths, 3-day moving average"
+          title = "8.1 Logged number of deaths per 1M inhabitans, Day 0 = 10 deaths, 7-day moving average"
           )
 ```
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FALSE, MA = 3),
+plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FALSE, MA = 7),
           TAKE_LOG = FALSE,
           dead = TRUE,
           labs_y = "Logged number of deaths per 1M inhabitants, 3-day moving average",
-          title = "8.2 Number of deaths per 1M inhabitans, Day 0 = 10 deaths, 3-day moving average"
+          title = "8.2 Number of deaths per 1M inhabitans, Day 0 = 10 deaths, 7-day moving average"
           )
 ```
