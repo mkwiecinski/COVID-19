@@ -82,6 +82,13 @@ build_data <- function(START_CASES_NO = 1, dead=FALSE, MA = 1, cumulative = TRUE
       tests = case_when(MA > 1 ~ rollapply(tests,MA,mean,align='right',fill=NA_real_), TRUE ~ 1.0*tests)
     )
   
+  policy <- 
+    fread("Policy.csv", header = TRUE) %>% 
+    mutate(
+      date = as.Date(date_policy_intro, "%d.%m.%Y"),
+      policy_intro = 1L
+    )
+
   data <- 
     fread(ifelse(dead,url_dead,url_conf)) %>%
     melt(., id.vars = c(1,2,3,4)) %>% 
@@ -123,7 +130,10 @@ build_data <- function(START_CASES_NO = 1, dead=FALSE, MA = 1, cumulative = TRUE
     
     left_join(., land) %>%
     mutate(pop_density = pop/land) %>%
-    select(-date_first, -pop)
+    select(-date_first, -pop) %>%
+    
+    left_join(., policy, by = c("country", "date")) %>%
+    mutate(policy_intro = ifelse(policy_intro == 1, 1, 0))
 
   MIN_VALUE <- if_else(dead == FALSE, MIN_CASES_CUM, MIN_DEATHS_CUM)
 
@@ -170,6 +180,7 @@ plot_chart <- function(
     geom_point(alpha = 0.7, size = 1) + 
     geom_line(alpha = 0.2) +
     geom_text(data = data %>% filter(is_maxv == 1), aes(label = country, colour = country, x = days, y = value), hjust = -.1, size = 3) +
+    geom_point(data = data %>% filter(policy_intro == 1), aes(colour = country, x = days, y = value), alpha = 1, size = 2) +
     labs(y=labs_y, x = labs_x) +
     labs(title = title, subtitle = subtitle) +
     labs(caption = caption) +
