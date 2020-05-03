@@ -15,6 +15,7 @@ library(tidyverse)
 library(broom)
 library(lubridate)
 library(zoo)
+library(ggthemes)
 ```
 
 
@@ -184,6 +185,7 @@ plot_chart <- function(
     labs(y=labs_y, x = labs_x) +
     labs(title = title, subtitle = subtitle) +
     labs(caption = caption) +
+    #scale_color_tableau(palette = "Tableau 10") +
     (if(TAKE_LOG) scale_y_continuous(labels = formatBack) ) +
     (if(legend_off) theme(legend.position="none"))
   
@@ -346,3 +348,14 @@ plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FAL
           title = "8.2 Number of deaths per 1M inhabitans, Day 0 = 10 deaths, 7-day moving average"
           )
 ```
+
+
+```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
+# plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FALSE, MA = 3),
+#           TAKE_LOG = FALSE,
+#           dead = TRUE,
+#           labs_y = "Change in daily death rate, 3-day moving average",
+#           title = "8.3 Change in daily death rate, Day 0 = 10 deaths, 3-day moving average"
+#           )
+```
+
