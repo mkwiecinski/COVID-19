@@ -25,7 +25,7 @@ library(ggthemes)
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
 url_dead <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 lookup <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv"
-MIN_CASES_CUM     <- 35000
+MIN_CASES_CUM     <- 50000
 MIN_DEATHS_CUM    <- 3000
 MIN_DATE_TESTS <- "2020-03-10"
 MIN_DATE       <- "2020-03-25"
@@ -33,12 +33,13 @@ TODAY          <- "2020-04-11"
 TAKE_LOG <- TRUE
 START_CASES_NO = 1
 START_DEATHS_NO = 10
-CHART_MAX = 1000000
+CHART_MAX = 10000000
 countries_include = c("Poland", "Czechia", "Sweden", "Singapore", "Korea, South")
 dead = FALSE
 MA = 1
 pc = TRUE
 cumulative = TRUE
+dailyRateChange = FALSE
 
 labs_x = "Days from patient 0"
 subtitle = NA
@@ -51,7 +52,7 @@ legend_off = TRUE
 ## Calc
 
 ```{r,  echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-build_data <- function(START_CASES_NO = 1, dead=FALSE, MA = 1, cumulative = TRUE, pc = TRUE, START_DEATHS_NO = 1){
+build_data <- function(START_CASES_NO = 1, dead=FALSE, MA = 1, cumulative = TRUE, pc = TRUE, START_DEATHS_NO = 1, dailyRateChange=FALSE){
 
   population <- fread("API_SP.POP.TOTL_DS2_en_csv_v2_866861.csv", header = TRUE) %>% 
     select(`Country Name`, `2018`) %>% 
@@ -121,6 +122,10 @@ build_data <- function(START_CASES_NO = 1, dead=FALSE, MA = 1, cumulative = TRUE
     mutate(
       cases_per_test = case_when(MA > 1 ~ rollapply(value/tests,MA,mean,align='right',fill=NA_real_), TRUE ~ 1.0*value/tests)
     ) %>% 
+    
+    mutate(
+      value = case_when(dailyRateChange == TRUE ~ value/lag(value) - 1, TRUE ~ 1.0 * value)
+    ) %>%
     
     left_join(., population) %>% 
     mutate(
@@ -252,6 +257,16 @@ plot_chart(data = build_data(START_CASES_NO = 100, cumulative = FALSE, MA = 7),
           )
 ```
 
+```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
+MIN_CASES_CUM     <- 200000
+plot_chart(data = build_data(START_CASES_NO = 100, dead = FALSE, cumulative = FALSE, MA = 14, dailyRateChange = TRUE, pc = FALSE) %>% filter(value < 1 & value > -0.2),
+          TAKE_LOG = FALSE,
+          dead = FALSE,
+          labs_y = "Change in daily rate, 14-day moving average",
+          title = "3.4 Change in daily rate, Day 0 = 100 cases, 14-day moving average"
+          )
+```
+
 ### 4. Other hypothesis
 
 Usunietę.
@@ -351,11 +366,12 @@ plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FAL
 
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-# plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FALSE, MA = 3),
-#           TAKE_LOG = FALSE,
-#           dead = TRUE,
-#           labs_y = "Change in daily death rate, 3-day moving average",
-#           title = "8.3 Change in daily death rate, Day 0 = 10 deaths, 3-day moving average"
-#           )
+MIN_DEATHS_CUM    <- 10000
+plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FALSE, MA = 14, dailyRateChange = TRUE, pc = FALSE) %>% filter(value < 1 & value > -0.2),
+          TAKE_LOG = FALSE,
+          dead = TRUE,
+          labs_y = "Change in daily death rate, 14-day moving average",
+          title = "8.3 Change in daily death rate, Day 0 = 2 deaths, 14-day moving average"
+          )
 ```
 
