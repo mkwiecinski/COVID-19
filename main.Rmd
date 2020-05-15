@@ -267,12 +267,17 @@ plot_chart(data = build_data(START_CASES_NO = 100, dead = FALSE, cumulative = FA
           )
 ```
 
-### 4. Other hypothesis
 
-Usunietę.
+### 4. Log(10) number of cases per 1M inhabitants
 
-Hipoteza: im większa gęstość zaludnienia, tym szybciej powinien krążyć wirus.
-
+```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
+plot_chart(data = build_data(START_CASES_NO = 100, cumulative = FALSE, MA = 7),
+          TAKE_LOG = TRUE,
+          dead = FALSE,
+          labs_y = "Log(10) number of cases per 1M inhabitants, 7-day moving average",
+          title = "4.1 Log(10) number of cases per 1M inhabitans, Day 0 = 100 cases, 7-day moving average"
+          )
+```
 
 ### 5. Tests
 

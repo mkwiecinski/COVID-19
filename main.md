@@ -25,19 +25,16 @@ Removed.
 
 ![](main_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-### 4\. Other hypothesis
+### 4\. Log(10) number of cases per 1M inhabitants
 
-Usunietę.
-
-Hipoteza: im większa gęstość zaludnienia, tym szybciej powinien krążyć
-wirus.
+![](main_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ### 5\. Tests
 
 Idea:
 <https://ourworldindata.org/grapher/tests-vs-confirmed-cases-covid-19-per-million>
 
-![](main_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](main_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ### 6\. Forecast
 
@@ -45,14 +42,14 @@ Removed.
 
 ### 7\. Deaths (cumulative)
 
-![](main_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
-
 ![](main_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
-### 8\. Deaths
-
 ![](main_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+### 8\. Deaths
 
 ![](main_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ![](main_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+![](main_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
