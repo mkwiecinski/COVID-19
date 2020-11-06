@@ -16,6 +16,7 @@ library(broom)
 library(lubridate)
 library(zoo)
 library(ggthemes)
+#library(ftplottools)
 ```
 
 
@@ -25,7 +26,7 @@ library(ggthemes)
 url_conf <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
 url_dead <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 lookup <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv"
-MIN_CASES_CUM     <- 500000
+MIN_CASES_CUM     <- 1000000
 MIN_DEATHS_CUM    <- 30000
 MIN_DATE_TESTS <- "2020-03-10"
 MIN_DATE       <- "2020-03-25"
@@ -34,7 +35,7 @@ TAKE_LOG <- TRUE
 START_CASES_NO = 1
 START_DEATHS_NO = 10
 CHART_MAX = 10000000
-countries_include = c("Poland", "Czechia", "Sweden", "Singapore", "Korea, South")
+countries_include = c("Poland", "Czechia", "Sweden", "Singapore", "Korea, South", "Switzerland", "Belgium", "Armenia", "US", "Brazil", "India", "Mexico", "United Kingdom", "Italy", "France", "Spain", "Peru", "Argentina", "Colombia", "Russia", "Israel", "Chile", "Iran")
 dead = FALSE
 MA = 1
 pc = TRUE
@@ -196,7 +197,7 @@ plot_chart <- function(
     labs(caption = caption) +
     #scale_color_tableau(palette = "Tableau 10") +
     (if(TAKE_LOG) scale_y_continuous(labels = formatBack) ) +
-    (if(legend_off) theme(legend.position="none"))
+    (if(legend_off) theme(legend.position="none")) 
   
   return(g)
 }
@@ -262,27 +263,20 @@ plot_chart(data = build_data(START_CASES_NO = 100, cumulative = FALSE, MA = 7),
 ```
 
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-MIN_CASES_CUM     <- 2000000
-countries_include = c("Poland", "Czechia", "Sweden", "Singapore", "Korea, South", "UK", "Italy")
 plot_chart(data = build_data(START_CASES_NO = 100, dead = FALSE, cumulative = FALSE, MA = 14, dailyRateChange = TRUE, pc = FALSE) %>% filter(value < 1 & value > -0.2),
           TAKE_LOG = FALSE,
           dead = FALSE,
           labs_y = "Change in daily rate, 14-day moving average",
           title = "3.4 Change in daily rate, Day 0 = 100 cases, 14-day moving average"
           )
-MIN_CASES_CUM     <- 80000
-countries_include = c("Poland", "Czechia", "Sweden", "Singapore", "Korea, South")
 ```
 ```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
-MIN_CASES_CUM     <- 2000000
-countries_include = c("Poland", "Czechia", "Sweden", "Singapore", "Korea, South", "UK", "Italy")
 plot_chart(data = build_data(START_CASES_NO = 100, dead = FALSE, cumulative = FALSE, MA = 7, pc = FALSE, tRansmission = TRUE, AR = 7) %>% filter(value < 3 & value > -0.2),
           TAKE_LOG = FALSE,
           dead = FALSE,
           labs_y = "R coefficient estimate, 7-day moving average",
           title = "3.6 R coefficient estimate, Day 0 = 100 cases, 7-day backwards, 7-day moving average"
           )
-MIN_CASES_CUM     <- 80000
 ```
 
 ### 4. Log(10) number of cases per 1M inhabitants
@@ -423,3 +417,16 @@ plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FAL
           )
 ```
 
+### 9. Death rate
+
+Parameter - przesuniecie w czasie (14-28dni)
+
+```{r, echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
+
+#plot_chart(data = build_data(START_DEATHS_NO = 10, dead = TRUE, cumulative = FALSE, MA = 7),
+#          TAKE_LOG = TRUE,
+#          dead = TRUE,
+#          labs_y = "Logged number of deaths per 1M inhabitants, 3-day moving average",
+#          title = "8.1 Logged number of deaths per 1M inhabitans, Day 0 = 10 deaths, 7-day moving average"
+#          )
+```

@@ -55,3 +55,7 @@ Removed.
 ![](main_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 ![](main_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+### 9\. Death rate
+
+Parameter - przesuniecie w czasie (14-28dni)
